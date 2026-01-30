@@ -12,7 +12,8 @@ a { color: inherit; }
 .h1 { font-size: 22px; margin: 0; }
 .muted { color: #9aa4ad; font-size: 13px; }
 
-.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+
 .card {
   background: #111826;
   border: 1px solid #1f2a3a;
@@ -21,9 +22,9 @@ a { color: inherit; }
   text-decoration: none;
   display:flex;
   flex-direction:column;
-  min-height: 240px;
+  min-height: 340px;
 }
-.card img { width: 100%; height: 130px; object-fit: cover; display:block; background:#0d141f; }
+.card img { width: 100%; height: 210px; object-fit: cover; display:block; background:#0d141f; }
 .card .pad { padding: 12px; display:flex; flex-direction:column; gap: 8px; }
 .card .title { font-weight: 700; font-size: 14px; line-height: 1.25; }
 .card .desc { color:#a8b3bd; font-size: 13px; line-height: 1.35; }
@@ -42,4 +43,13 @@ a { color: inherit; }
   background:#1b2a40; border:1px solid #2a3b55; color:#e6edf3;
   padding: 10px 12px; border-radius: 10px; cursor:pointer;
 }
-.btn:hover { filter: brightness(1.05); }
+.btn:hover { filter: brightness(1.05); 
+.tabs { display:flex; gap:10px; flex-wrap:wrap; margin: 10px 0 16px; }
+.tab {
+  background:#0f1726; color:#e6edf3; border:1px solid #223145;
+  padding: 8px 12px; border-radius: 999px; cursor:pointer;
+}
+.tab.active { border-color:#3a567a; background:#111c2e;          
+           }
+
+
