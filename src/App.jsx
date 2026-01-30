@@ -106,7 +106,9 @@ function BoardsList() {
 
 function BoardView({ slug }) {
   const [board, setBoard] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [cards, setCards] = useState([]);
+  const [selectedCat, setSelectedCat] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -116,7 +118,7 @@ function BoardView({ slug }) {
 
       const { data: b, error: be } = await supabase
         .from("boards")
-        .select("id,title,slug")
+        .select("id,title,slug,background_url")
         .eq("slug", slug)
         .maybeSingle();
 
@@ -124,22 +126,34 @@ function BoardView({ slug }) {
       if (be || !b) {
         console.error(be);
         setBoard(null);
+        setCategories([]);
         setCards([]);
         setLoading(false);
         return;
       }
 
-      const { data: c, error: ce } = await supabase
-        .from("cards")
-        .select("id,title,description,image_url,link_url,order_index")
+      // categories
+      const { data: cat, error: catErr } = await supabase
+        .from("categories")
+        .select("id,title,order_index")
         .eq("board_id", b.id)
         .order("order_index", { ascending: true });
 
-      if (!alive) return;
+      if (catErr) console.error(catErr);
+
+      // cards
+      const { data: c, error: ce } = await supabase
+        .from("cards")
+        .select("id,title,description,image_url,link_url,order_index,category_id")
+        .eq("board_id", b.id)
+        .order("order_index", { ascending: true });
+
       if (ce) console.error(ce);
 
       setBoard(b);
+      setCategories(cat ?? []);
       setCards(c ?? []);
+      setSelectedCat("all");
       setLoading(false);
     })();
 
@@ -147,6 +161,30 @@ function BoardView({ slug }) {
       alive = false;
     };
   }, [slug]);
+
+  const filteredCards =
+    selectedCat === "all" ? cards : cards.filter((c) => c.category_id === selectedCat);
+
+  // (опционально) фон доски
+  useEffect(() => {
+    if (!board?.background_url) return;
+    const prev = document.body.style.backgroundImage;
+    const prevSize = document.body.style.backgroundSize;
+    const prevPos = document.body.style.backgroundPosition;
+    const prevAttach = document.body.style.backgroundAttachment;
+
+    document.body.style.backgroundImage = `url(${board.background_url})`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundAttachment = "fixed";
+
+    return () => {
+      document.body.style.backgroundImage = prev;
+      document.body.style.backgroundSize = prevSize;
+      document.body.style.backgroundPosition = prevPos;
+      document.body.style.backgroundAttachment = prevAttach;
+    };
+  }, [board?.background_url]);
 
   return (
     <>
@@ -163,9 +201,29 @@ function BoardView({ slug }) {
         <div className="muted">Board not found (or not published).</div>
       ) : (
         <>
-          <h2 style={{ margin: "8px 0 14px" }}>{board.title}</h2>
+          <h2 style={{ margin: "8px 0 6px" }}>{board.title}</h2>
+
+          {/* Tabs */}
+          <div className="tabs">
+            <button
+              className={`tab ${selectedCat === "all" ? "active" : ""}`}
+              onClick={() => setSelectedCat("all")}
+            >
+              All
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`tab ${selectedCat === cat.id ? "active" : ""}`}
+                onClick={() => setSelectedCat(cat.id)}
+              >
+                {cat.title}
+              </button>
+            ))}
+          </div>
+
           <div className="grid">
-            {cards.map((c) => (
+            {filteredCards.map((c) => (
               <a
                 key={c.id}
                 className="card"
@@ -177,17 +235,28 @@ function BoardView({ slug }) {
                 }}
                 title={c.link_url || ""}
               >
-                {c.image_url ? <img src={c.image_url} alt="" /> : <div style={{ height: 130 }} />}
+                {c.image_url ? <img src={c.image_url} alt="" /> : <div style={{ height: 210 }} />}
                 <div className="pad">
                   <div className="title">{c.title}</div>
                   {c.description ? <div className="desc">{c.description}</div> : null}
-                  {c.link_url ? <div className="muted">Open link ↗</div> : <div className="muted">No link</div>}
+                  {c.link_url ? (
+                    <div className="muted">Open link ↗</div>
+                  ) : (
+                    <div className="muted">No link</div>
+                  )}
                 </div>
               </a>
             ))}
           </div>
+
+          {filteredCards.length === 0 ? (
+            <div className="muted" style={{ marginTop: 12 }}>
+              No cards in this category.
+            </div>
+          ) : null}
         </>
       )}
     </>
   );
 }
+
